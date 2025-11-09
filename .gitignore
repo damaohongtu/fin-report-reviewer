@@ -118,10 +118,5 @@ models/
 *.xlsx
 *.xls
 
-
-data/excel_reports/
-
-excel_reports
-
 logs
 *.log
