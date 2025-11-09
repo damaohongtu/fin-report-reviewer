@@ -77,6 +77,8 @@ class IndicatorExtractor:
                 "unit": "元",
                 "display_format": self._format_large_number(revenue_current)
             }
+        else:
+            logger.warning(f"营业收入计算失败: 营业收入={revenue_current}")
         
         # 2. 净利润增速
         net_profit_current = self._get_value(current_income, "net_profit")
@@ -91,7 +93,9 @@ class IndicatorExtractor:
                 "unit": "元",
                 "display_format": self._format_large_number(net_profit_current)
             }
-        
+        else:
+            logger.warning(f"净利润计算失败: 净利润={net_profit_current}")
+
         # 3. 归母净利润
         net_profit_parent_current = self._get_value(current_income, "net_profit_parent")
         net_profit_parent_previous = self._get_value(previous_income, "net_profit_parent")
@@ -107,7 +111,8 @@ class IndicatorExtractor:
                 "unit": "元",
                 "display_format": self._format_large_number(net_profit_parent_current)
             }
-        
+        else:
+            logger.warning(f"归母净利润计算失败: 归母净利润={net_profit_parent_current}")
         return indicators
     
     def _extract_auxiliary_indicators(
@@ -134,6 +139,8 @@ class IndicatorExtractor:
                          if gross_margin_previous is not None else None,
                 "unit": "%"
             }
+        else:
+            logger.warning(f"毛利率计算失败: 毛利率={gross_margin_current}")
         
         # 2. 研发费用率
         rd_expense_current = self._get_value(current_income, "rd_expense")
@@ -148,6 +155,8 @@ class IndicatorExtractor:
             rd_expense_ratio_previous = None
             if rd_expense_previous is not None and revenue_previous:
                 rd_expense_ratio_previous = (rd_expense_previous / revenue_previous) * 100
+            else:
+                logger.warning(f"研发费用率计算失败: 研发费用={rd_expense_previous}, 营业收入={revenue_previous}")
             
             indicators["rd_expense"] = {
                 "name": "研发费用",
@@ -173,6 +182,8 @@ class IndicatorExtractor:
             sales_expense_ratio_previous = None
             if sales_expense_previous is not None and revenue_previous:
                 sales_expense_ratio_previous = (sales_expense_previous / revenue_previous) * 100
+            else:
+                logger.warning(f"销售费用率计算失败: 销售费用={sales_expense_previous}, 营业收入={revenue_previous}")
             
             indicators["sales_expense"] = {
                 "name": "销售费用",
@@ -248,6 +259,8 @@ class IndicatorExtractor:
             gross_margin = (gross_profit / revenue) * 100
             return round(gross_margin, 2)
         
+        logger.warning(f"毛利率计算失败: 营业收入={revenue}, 营业成本={cost}")
+        
         return None
     
     def _calculate_growth_rate(
@@ -260,9 +273,11 @@ class IndicatorExtractor:
         增长率 = (本期 - 上期) / 上期 * 100%
         """
         if current is None or previous is None:
+            logger.warning(f"增长率计算失败: 本期={current}, 上期={previous}")
             return None
         
         if previous == 0:
+            logger.warning(f"增长率计算失败: 本期={current}, 上期={previous}")
             return None  # 避免除零
         
         growth_rate = ((current - previous) / abs(previous)) * 100
