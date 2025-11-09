@@ -1,0 +1,127 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+app.log
+error.log
+
+# Data Files
+data/uploads/*
+data/reports/*
+data/pdfs/*
+!data/uploads/.gitkeep
+!data/reports/.gitkeep
+!data/pdfs/.gitkeep
+
+# Sample Reports (keep structure)
+data/sample_reports/*.pdf
+data/sample_reports/*.xlsx
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache
+.cache/
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Coverage
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Docker
+.dockerignore
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# Chroma/Milvus data (if running locally)
+chroma_db/
+milvus_data/
+
+# Model cache
+models/
+*.pt
+*.pth
+*.bin
+*.ckpt
+
+# Streamlit
+.streamlit/secrets.toml
+
+*.xlsx
+*.xls
+
+
+data/excel_reports/
+
+excel_reports
+
+logs
+*.log

@@ -1,0 +1,65 @@
+# 公司配置文件
+# 用于 Streamlit 应用的公司选择列表
+
+companies:
+  - name: "三六零"
+    code: "601360"
+    industry: "computer"
+    market: "上海证券交易所"
+    description: "网络安全和互联网服务提供商"
+  
+  - name: "海康威视"
+    code: "002415"
+    industry: "computer"
+    market: "深圳证券交易所"
+    description: "视频监控设备及解决方案提供商"
+  
+  - name: "科大讯飞"
+    code: "002230"
+    industry: "computer"
+    market: "深圳证券交易所"
+    description: "智能语音与人工智能技术提供商"
+  
+  - name: "用友网络"
+    code: "600588"
+    industry: "computer"
+    market: "上海证券交易所"
+    description: "企业管理软件与云服务提供商"
+  
+  - name: "恒生电子"
+    code: "600570"
+    industry: "computer"
+    market: "上海证券交易所"
+    description: "金融软件和服务提供商"
+  
+  - name: "东方财富"
+    code: "300059"
+    industry: "computer"
+    market: "深圳证券交易所"
+    description: "互联网金融服务平台"
+
+# 行业配置
+industries:
+  computer:
+    name: "计算机"
+    description: "TMT高风险偏好板块"
+    characteristics:
+      - "成长性强"
+      - "高估值"
+      - "业绩不可预测"
+
+# 报告期类型
+period_types:
+  Q1:
+    name: "一季报"
+    end_date: "03-31"
+  Q2:
+    name: "半年报"
+    end_date: "06-30"
+  Q3:
+    name: "三季报"
+    end_date: "09-30"
+  Q4:
+    name: "年报"
+    end_date: "12-31"
+
