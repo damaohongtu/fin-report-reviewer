@@ -139,6 +139,7 @@ class IndicatorExtractor:
                          if gross_margin_previous is not None else None,
                 "unit": "%"
             }
+            logger.success(f"毛利率计算成功: 毛利率={gross_margin_current}")
         else:
             logger.warning(f"毛利率计算失败: 毛利率={gross_margin_current}")
         
