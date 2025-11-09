@@ -111,7 +111,8 @@ psql -U postgres -d financial_reports -f scripts/database_schema.sql
 **方式一：从Excel导入（推荐）**
 
 ```bash
-# 将Wind导出的Excel文件放入 data/excel_reports/ 目录
+# 将Excel文件放入 data/excel_reports/ 目录
+# 下载地址：https://damaohongtu-1301224607.cos.ap-beijing.myqcloud.com/fin/excel_reports.7z
 # 目录结构：
 # data/excel_reports/
 #   ├── 利润表/FS_Comins.xlsx
