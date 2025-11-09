@@ -71,16 +71,29 @@ def retrieve_context_node(state: FinancialReportState) -> FinancialReportState:
     logger.info("📄 节点执行: 检索Milvus上下文")
     state["current_step"] = "retrieve_context"
     state["processing_steps"].append("retrieve_context")
+
+    # TODO: 需要准备若干问题用于检索上下文
+    # 例如：
+    # 1. 公司最近一年的财务状况如何？
+    # 2. 公司最近一年的经营状况如何？
+    # 3. 公司最近一年的投资状况如何？
+    # 4. 公司最近一年的融资状况如何？
+    # 5. 公司最近一年的财务状况如何？
+    # 6. 公司最近一年的经营状况如何？
+    # 7. 公司最近一年的投资状况如何？
     
     try:
         # 调用Tool获取上下文
         context = get_context_for_analysis_tool.invoke({
             "company_name": state["company_name"],
             "report_period": state["report_period"],
-            "query": None
+            "query": None # TODO: 添加财报查询文本获取更加精确的内容
         })
         
         state["tools_called"].append("get_context_for_analysis_tool")
+
+        # TODO: 使用大模型对查询到的结果进行进一步提炼生成更加精确的上下文
+
         state["milvus_context"] = context
         
         logger.success(f"✅ 检索到上下文: {len(context)} 字符")
