@@ -1,5 +1,7 @@
 # 财报点评系统
 
+[English](./README-EN.md) | 简体中文
+
 > 基于 LangChain + LangGraph + DeepSeek + PostgreSQL + Milvus 的智能财报分析系统
 
 ![img](./imgs/demo.png)
