@@ -2,6 +2,8 @@
 
 > 基于 LangChain + LangGraph + DeepSeek + PostgreSQL + Milvus 的智能财报分析系统
 
+![img](./imgs/demo.png)
+
 ## 🎯 核心理念
 
 ### 数据与逻辑分离
@@ -105,6 +107,7 @@ psql -U postgres -d financial_reports -f scripts/database_schema.sql
 #### 2.2 导入财报数据
 
 **方式一：从Excel导入（推荐）**
+
 ```bash
 # 将Wind导出的Excel文件放入 data/excel_reports/ 目录
 # 目录结构：
@@ -119,6 +122,7 @@ EXCEL_DATA_DIR=./data/excel_reports
 ```
 
 **方式二：从PostgreSQL导入**
+
 ```bash
 # 使用导入脚本
 python scripts/import_financial_data.py
@@ -197,29 +201,29 @@ graph TB
         A1[app.py<br/>Streamlit Web界面]
         A2[ReportGenerator<br/>工作流调度器]
     end
-    
+  
     subgraph Graph["LangGraph 编排层 Graph Layer"]
         G1[financial_report_graph.py<br/>定义工作流DAG]
     end
-    
+  
     subgraph Nodes["节点层 Nodes Layer"]
         N1[data_nodes.py<br/>数据获取节点]
         N2[calculation_nodes.py<br/>指标计算节点]
         N3[analysis_nodes.py<br/>分析节点 LLM]
         N4[report_nodes.py<br/>报告生成和质量检查]
     end
-    
+  
     subgraph Tools["工具层 Tools Layer - 避免GIGO"]
         T1[financial_data_tools.py<br/>财务数据获取]
         T2[indicator_calculation_tools.py<br/>指标精确计算]
         T3[milvus_tools.py<br/>向量检索]
     end
-    
+  
     subgraph Data["数据层 Data Layer"]
         D1[(PostgreSQL<br/>结构化财报数据)]
         D2[(Milvus<br/>非结构化文本向量)]
     end
-    
+  
     A1 --> A2
     A2 --> G1
     G1 --> N1
@@ -234,7 +238,7 @@ graph TB
     N4 --> T1
     T1 --> D1
     T3 --> D2
-    
+  
     style Application fill:#e1f5ff
     style Graph fill:#fff4e6
     style Nodes fill:#f3e5f5
@@ -256,7 +260,7 @@ flowchart LR
     GEN --> QC[质量检查<br/>quality_check]
     QC -->|quality >= 80| END([结束])
     QC -->|quality < 80| GEN
-    
+  
     style START fill:#4caf50,color:#fff
     style END fill:#f44336,color:#fff
     style FETCH fill:#2196f3,color:#fff
@@ -272,17 +276,18 @@ flowchart LR
 ### 核心设计理念
 
 1. **职责分离**
+
    - **Tools**：执行具体任务（数据获取、指标计算），返回精确结果
    - **Nodes**：业务逻辑处理，协调Tools和LLM
    - **Graphs**：工作流编排，定义节点执行顺序和条件路由
    - **LLM**：分析和生成洞察，不做数值计算
-
 2. **避免GIGO（Garbage In Garbage Out）**
+
    - 所有数值计算由 Python 代码精确完成
    - LLM 只接收计算好的指标进行分析
    - 示例：营业收入增速、毛利率等由 `indicator_calculation_tools` 计算
-
 3. **状态管理**
+
    - 使用 `FinancialReportState` (TypedDict) 在节点间传递数据
    - 包含：输入信息、财务数据、指标、分析结果、元数据等
 
@@ -316,16 +321,16 @@ cp env.example .env
 
 **核心配置项**：
 
-| 配置项 | 说明 | 默认值 |
-|--------|------|--------|
-| `DEEPSEEK_API_KEY` | DeepSeek API密钥 | 必需 |
-| `DATABASE_URL` | PostgreSQL连接字符串 | 必需 |
-| `MILVUS_HOST` | Milvus服务器地址 | localhost |
-| `MILVUS_USER` | Milvus用户名 | 必需 |
-| `MILVUS_PASSWORD` | Milvus密码 | 必需 |
-| `EMBEDDING_MODEL` | Embedding模型路径 | BAAI/bge-large-zh-v1.5 |
-| `EMBEDDING_DIM` | Embedding维度 | 1024 |
-| `DATA_SOURCE` | 数据源类型 | excel |
+| 配置项               | 说明                 | 默认值                 |
+| -------------------- | -------------------- | ---------------------- |
+| `DEEPSEEK_API_KEY` | DeepSeek API密钥     | 必需                   |
+| `DATABASE_URL`     | PostgreSQL连接字符串 | 必需                   |
+| `MILVUS_HOST`      | Milvus服务器地址     | localhost              |
+| `MILVUS_USER`      | Milvus用户名         | 必需                   |
+| `MILVUS_PASSWORD`  | Milvus密码           | 必需                   |
+| `EMBEDDING_MODEL`  | Embedding模型路径    | BAAI/bge-large-zh-v1.5 |
+| `EMBEDDING_DIM`    | Embedding维度        | 1024                   |
+| `DATA_SOURCE`      | 数据源类型           | excel                  |
 
 完整配置请参考 `env.example`。
 
@@ -407,10 +412,10 @@ IndicatorConfig(
 def xxx_node(state: FinancialReportState) -> FinancialReportState:
     """新节点：执行XXX任务"""
     logger.info("执行XXX节点")
-    
+  
     # 调用Tool或LLM
     result = some_tool.invoke({...})
-    
+  
     # 更新状态
     state["xxx_result"] = result
     return state
@@ -434,7 +439,7 @@ workflow.add_edge("xxx_node", "next_node")
 ```python
 class XXXDataService:
     """新数据源服务"""
-    
+  
     def get_xxx_data(self, company_code: str, period: str):
         # 获取数据逻辑
         return data
@@ -501,7 +506,7 @@ for name, code in companies:
         report_period="2024-06-30",
         industry="computer"
     )
-    
+  
     # 保存报告
     with open(f"data/reports/{name}_2024Q2.md", "w") as f:
         f.write(result["report"])
@@ -523,19 +528,20 @@ streamlit run app.py
 ## ⚠️ 注意事项
 
 1. **数据准备**
+
    - 确保PostgreSQL中有完整的财报数据（利润表、资产负债表、现金流量表）
    - 可选：将PDF财报摄入Milvus获得更丰富的分析上下文
-
 2. **API配置**
+
    - DeepSeek API需要有效的密钥和足够的额度
    - 建议配置 `DEEPSEEK_TEMPERATURE=0.1` 以获得稳定输出
-
 3. **Embedding模型**
+
    - 首次运行会自动下载模型（约1.3GB for bge-large-zh）
    - 可配置 `EMBEDDING_CACHE_DIR` 指定模型缓存位置
    - GPU加速：设置 `EMBEDDING_DEVICE=cuda`
-
 4. **性能优化**
+
    - 使用 `DATA_SOURCE=excel` 从本地Excel读取数据更快
    - Milvus索引类型为HNSW，检索速度快
    - LLM调用采用分步策略，避免单次Token过长
@@ -545,6 +551,7 @@ streamlit run app.py
 欢迎提交Issue和Pull Request！
 
 **贡献方向**：
+
 - 新增行业配置（医药、消费、金融等）
 - 优化Prompt模板提升报告质量
 - 添加更多财务指标计算
