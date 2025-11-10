@@ -7,6 +7,7 @@ from loguru import logger
 
 from src.parsers.financial_pdf_parser import FinancialPDFParser
 from src.config.settings import settings
+from src.embeddings.factory import EmbeddingFactory
 
 
 class ReportIngestionService:
@@ -58,8 +59,8 @@ class ReportIngestionService:
         self.CollectionSchema = CollectionSchema
         self.DataType = DataType
         
-        # 初始化Embedding模型
-        self._init_embedding_model()
+        # 初始化Embedding服务
+        self._init_embedding_service()
         
         # 连接Milvus
         self._connect_milvus()
@@ -69,51 +70,13 @@ class ReportIngestionService:
         
         logger.info(f"✅ PDF财报摄入服务初始化完成 - Collection: {self.COLLECTION_NAME}")
     
-    def _init_embedding_model(self):
-        """初始化本地Embedding模型"""
+    def _init_embedding_service(self):
+        """初始化Embedding服务"""
         try:
-            import os
-            from sentence_transformers import SentenceTransformer
-            import torch
-            from pathlib import Path
-            
-            # 设置HuggingFace国内镜像（加速模型下载）
-            if 'HF_ENDPOINT' not in os.environ:
-                os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
-                logger.info("已设置HuggingFace镜像: https://hf-mirror.com")
-            
-            # 设置自定义缓存目录（如果配置了）
-            if settings.EMBEDDING_CACHE_DIR:
-                cache_dir = Path(settings.EMBEDDING_CACHE_DIR)
-                cache_dir.mkdir(parents=True, exist_ok=True)
-                os.environ['SENTENCE_TRANSFORMERS_HOME'] = str(cache_dir)
-                logger.info(f"模型缓存目录: {cache_dir}")
-            
-            logger.info(f"正在加载Embedding模型: {settings.EMBEDDING_MODEL}")
-            
-            # 检测设备
-            device = settings.EMBEDDING_DEVICE
-            if device == "cuda" and not torch.cuda.is_available():
-                logger.warning("CUDA不可用，切换到CPU")
-                device = "cpu"
-            
-            # 加载模型（支持本地路径和HuggingFace模型名）
-            # 如果是绝对路径或相对路径，直接加载
-            # 否则从HuggingFace下载
-            model_path = settings.EMBEDDING_MODEL
-            if Path(model_path).exists():
-                logger.info(f"从本地路径加载模型: {model_path}")
-            
-            self.embedding_model = SentenceTransformer(
-                model_path,
-                device=device,
-                cache_folder=settings.EMBEDDING_CACHE_DIR if settings.EMBEDDING_CACHE_DIR else None
-            )
-            
-            logger.success(f"✅ Embedding模型加载完成: {settings.EMBEDDING_MODEL} (设备: {device})")
-            
+            self.embedding_service = EmbeddingFactory.create_embedding_service()
+            logger.success(f"✅ Embedding服务初始化完成: {self.embedding_service.get_model_name()}")
         except Exception as e:
-            logger.error(f"❌ 加载Embedding模型失败: {e}")
+            logger.error(f"❌ Embedding服务初始化失败: {e}")
             raise
     
     def _connect_milvus(self):
@@ -366,7 +329,7 @@ class ReportIngestionService:
         return chunks
     
     def _generate_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """生成文本embeddings（使用本地模型）
+        """生成文本embeddings
         
         Args:
             texts: 文本列表
@@ -377,20 +340,16 @@ class ReportIngestionService:
         try:
             logger.info(f"正在生成{len(texts)}个文本的embeddings...")
             
-            # 使用本地模型批量生成embeddings
-            embeddings = self.embedding_model.encode(
+            # 使用embedding服务批量生成embeddings
+            embeddings = self.embedding_service.encode(
                 texts,
                 batch_size=settings.EMBEDDING_BATCH_SIZE,
-                show_progress_bar=True,
-                convert_to_numpy=True
+                show_progress_bar=True
             )
             
-            # 转换为列表格式
-            embeddings_list = embeddings.tolist()
+            logger.success(f"✅ 生成了{len(embeddings)}个embeddings (维度: {len(embeddings[0])})")
             
-            logger.success(f"✅ 生成了{len(embeddings_list)}个embeddings (维度: {len(embeddings_list[0])})")
-            
-            return embeddings_list
+            return embeddings
             
         except Exception as e:
             logger.error(f"❌ 生成embeddings失败: {e}")
