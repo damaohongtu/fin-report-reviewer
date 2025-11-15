@@ -241,7 +241,24 @@ class ReportIngestionService:
             chunks = [chunk.text for chunk in chunker.chunk(doc)]
             logger.info(f"从Markdown摄入财报完成, 共{len(chunks)}个文本块")
             embeddings = self._generate_embeddings(chunks)
-            self._store_to_milvus(chunks, embeddings)
+
+            chunks_data = [
+                {
+                    "chunk_text":text, 
+                    "chunk_id": i, 
+                    "report_id": f"{company_code}_{report_period}", 
+                    "company_name": company_name, 
+                    "company_code": company_code, 
+                    "report_period": report_period, 
+                    "chunk_type": "markdown", 
+                    "chunk_index": i, 
+                    "page_number": -1, 
+                    "file_path": markdown_path, 
+                    "created_at": int(time.time())
+                } for i, text in enumerate(chunks)
+            ]
+
+            self._store_to_milvus(chunks_data, embeddings)
             return {
                 "status": "success",
                 "report_id": f"{company_code}_{report_period}",
