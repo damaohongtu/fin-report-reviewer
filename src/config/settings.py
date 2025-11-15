@@ -33,9 +33,13 @@ class Settings(BaseSettings):
     EMBEDDING_API_URL: str = Field(default="http://localhost:8080", env="EMBEDDING_API_URL")  # HTTP服务地址
     EMBEDDING_API_TIMEOUT: int = Field(default=60, env="EMBEDDING_API_TIMEOUT")  # 请求超时时间(秒)
     
-    # 数据库配置
-    DATABASE_URL: str = Field(..., env="DATABASE_URL")
+    # 数据库配置（已弃用，改用HTTP服务）
+    DATABASE_URL: str = Field(default="", env="DATABASE_URL")  # 不再必需
     DATABASE_ECHO: bool = Field(default=False, env="DATABASE_ECHO")
+    
+    # 财报数据服务配置 (HTTP)
+    FINANCIAL_DATA_API_URL: str = Field(default="http://localhost:8081", env="FINANCIAL_DATA_API_URL")
+    FINANCIAL_DATA_API_TIMEOUT: int = Field(default=30, env="FINANCIAL_DATA_API_TIMEOUT")
     
     # 向量数据库配置 - Milvus
     MILVUS_HOST: str = Field(default="localhost", env="MILVUS_HOST")

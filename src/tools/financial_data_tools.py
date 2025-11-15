@@ -1,23 +1,23 @@
 """财务数据获取 Tools
 
-将 FinancialDataService 的功能封装为 LangChain Tools
+将财报数据HTTP客户端的功能封装为 LangChain Tools
 """
 from typing import Dict, Any
 from langchain_core.tools import tool
 from loguru import logger
 
-from src.database.financial_data_service import FinancialDataService
+from src.clients.financial_data_http_client import FinancialDataHttpClient
 
 
-# 全局服务实例
-_db_service = None
+# 全局HTTP客户端实例
+_http_client = None
 
-def get_db_service() -> FinancialDataService:
-    """获取数据库服务单例"""
-    global _db_service
-    if _db_service is None:
-        _db_service = FinancialDataService()
-    return _db_service
+def get_data_client() -> FinancialDataHttpClient:
+    """获取财报数据HTTP客户端单例"""
+    global _http_client
+    if _http_client is None:
+        _http_client = FinancialDataHttpClient()
+    return _http_client
 
 
 @tool
@@ -37,8 +37,8 @@ def get_income_statement_tool(
         利润表数据字典，包含营业收入、成本、费用、利润等
     """
     logger.info(f"Tool调用: 获取利润表 - {stock_code} {report_period}")
-    db_service = get_db_service()
-    result = db_service.get_income_statement(stock_code, report_period, report_type)
+    client = get_data_client()
+    result = client.get_income_statement(stock_code, report_period, report_type)
     return result or {}
 
 
@@ -59,8 +59,8 @@ def get_balance_sheet_tool(
         资产负债表数据字典，包含资产、负债、权益等
     """
     logger.info(f"Tool调用: 获取资产负债表 - {stock_code} {report_period}")
-    db_service = get_db_service()
-    result = db_service.get_balance_sheet(stock_code, report_period, report_type)
+    client = get_data_client()
+    result = client.get_balance_sheet(stock_code, report_period, report_type)
     return result or {}
 
 
@@ -81,8 +81,8 @@ def get_cash_flow_tool(
         现金流量表数据字典，包含经营、投资、筹资活动现金流
     """
     logger.info(f"Tool调用: 获取现金流量表 - {stock_code} {report_period}")
-    db_service = get_db_service()
-    result = db_service.get_cash_flow(stock_code, report_period, report_type)
+    client = get_data_client()
+    result = client.get_cash_flow(stock_code, report_period, report_type)
     return result or {}
 
 
@@ -110,8 +110,8 @@ def get_complete_financial_data_tool(
         - previous_data: 上期数据
     """
     logger.info(f"Tool调用: 获取完整财务数据 - {stock_code} {report_period}")
-    db_service = get_db_service()
-    result = db_service.get_complete_financial_data(
+    client = get_data_client()
+    result = client.get_complete_financial_data(
         stock_code, report_period, report_type, include_previous
     )
     return result
