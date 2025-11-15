@@ -4,6 +4,9 @@ import time
 from typing import Dict, List, Optional
 from pathlib import Path
 from loguru import logger
+from docling_core.transforms.chunker import HierarchicalChunker
+from docling.document_converter import DocumentConverter
+
 
 from src.parsers.financial_pdf_parser import FinancialPDFParser
 from src.config.settings import settings
@@ -217,6 +220,40 @@ class ReportIngestionService:
         except Exception as e:
             logger.error(f"❌ PDF财报摄入失败: {e}")
             raise
+    
+    def ingest_markdown(self, markdown_path: str, company_name: str, company_code: str, report_period: str) -> Dict:
+        """从Markdown摄入财报, 基于docling进行chunk
+        
+        Args:
+            markdown_path: Markdown文件路径
+            company_name: 公司名称
+            company_code: 公司代码
+            report_period: 报告期
+        """
+        try:
+            markdown_file = Path(markdown_path)
+            if not markdown_file.exists():
+                raise FileNotFoundError(f"Markdown文件不存在: {markdown_path}")
+            
+            converter = DocumentConverter()
+            doc = converter.convert(markdown_path).document
+            chunker = HierarchicalChunker()
+            chunks = [chunk.text for chunk in chunker.chunk(doc)]
+            logger.info(f"从Markdown摄入财报完成, 共{len(chunks)}个文本块")
+            embeddings = self._generate_embeddings(chunks)
+            self._store_to_milvus(chunks, embeddings)
+            return {
+                "status": "success",
+                "report_id": f"{company_code}_{report_period}",
+                "company_name": company_name,
+                "company_code": company_code,
+                "report_period": report_period,
+            }
+
+        except Exception as e:
+            logger.error(f"❌ 从Markdown摄入财报失败: {e}")
+            raise
+
     
     def batch_ingest(self, pdf_list: List[Dict]) -> List[Dict]:
         """批量摄入PDF财报

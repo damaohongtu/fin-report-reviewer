@@ -5,7 +5,7 @@ HTTP Embedding服务
 使用FastAPI + SentenceTransformer实现
 
 启动方式：
-python emb-server/embedding_server.py --host 0.0.0.0 --port 8080 --device cuda --cache-dir ./models
+python emb-server/embedding_server.py --host 0.0.0.0 --port 8080 --model E:/models/bge-base-zh-v1.5 --device cpu --cache-dir E:/models
 
 或使用uvicorn：
 uvicorn embedding_server:app --host 0.0.0.0 --port 8080 --reload
