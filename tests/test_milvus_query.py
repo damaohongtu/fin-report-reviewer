@@ -1,5 +1,4 @@
 """测试Milvus查询"""
-import tests
 from pymilvus import connections, Collection
 from src.config.settings import settings
 from sentence_transformers import SentenceTransformer
