@@ -245,13 +245,13 @@ class ReportIngestionService:
             chunks_data = [
                 {
                     "chunk_text":text, 
-                    "chunk_id": i, 
+                    "chunk_id": str(i), 
                     "report_id": f"{company_code}_{report_period}", 
                     "company_name": company_name, 
                     "company_code": company_code, 
                     "report_period": report_period, 
                     "chunk_type": "markdown", 
-                    "chunk_index": i, 
+                    "chunk_index": str(i), 
                     "page_number": -1, 
                     "file_path": markdown_path, 
                     "created_at": int(time.time())
