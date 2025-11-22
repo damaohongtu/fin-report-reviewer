@@ -5,7 +5,7 @@ HTTP Embedding服务
 使用FastAPI + SentenceTransformer实现
 
 启动方式：
-python emb-server/embedding_server.py --host 0.0.0.0 --port 8080 --model E:/models/bge-base-zh-v1.5 --device cpu --cache-dir E:/models
+python emb-server/embedding_server.py --host 0.0.0.0 --port 8080 --model E:/models/bge-large-zh-v1.5 --device cpu --cache-dir E:/models
 
 或使用uvicorn：
 uvicorn embedding_server:app --host 0.0.0.0 --port 8080 --reload
@@ -33,7 +33,7 @@ import torch
 from loguru import logger
 
 # ==================== 配置 ====================
-DEFAULT_MODEL = "BAAI/bge-base-zh-v1.5"
+DEFAULT_MODEL = "E:/models/bge-large-zh-v1.5"
 DEFAULT_DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 DEFAULT_BATCH_SIZE = 32
 DEFAULT_CACHE_DIR = None  # 默认使用系统缓存目录
@@ -87,7 +87,7 @@ app = FastAPI(
 embedding_model: Optional[SentenceTransformer] = None
 model_name: str = DEFAULT_MODEL
 device: str = DEFAULT_DEVICE
-dimension: int = 768  # bge-base-zh-v1.5 的维度
+dimension: int = 1024  # bge-base-zh-v1.5 的维度
 cache_dir: Optional[str] = None
 
 

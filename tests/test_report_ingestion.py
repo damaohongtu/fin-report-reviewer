@@ -13,6 +13,6 @@ result_markdown = ingestion_service.ingest_markdown(
     markdown_path="E:/workspace/fin-report-reviewer/data/markdowns/MinerU_海康威视-2025半年报__20251115014014.md",
     company_name="海康威视",
     company_code="002415.SZ",
-    report_period="2025-06-30"
+    report_period="20250630"
 )
 print(result_markdown)

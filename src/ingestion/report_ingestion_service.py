@@ -90,7 +90,7 @@ class ReportRepository:
             "params": {"M": 16, "efConstruction": 256}
         }
         col.create_index(field_name="embedding", index_params=index_params)
-        # 也可为 title_embedding 创建索引（视需求与存储开销而定）
+        col.create_index(field_name="title_embedding", index_params=index_params)
         col.load()
         logger.success(f"✅ Collection创建完成: {self.collection_name}")
 
@@ -145,8 +145,12 @@ class ReportIngestionService:
     """
 
     # chunk 长度阈值
-    DEFAULT_MAX_CHUNK = 500
-    DEFAULT_MIN_CHUNK = 80
+    DEFAULT_MAX_CHUNK = 2048
+    DEFAULT_MIN_CHUNK = 512
+    
+    # Milvus 字段最大长度限制
+    MILVUS_MAX_CHUNK_TEXT = 4096  # chunk_text 字段最大长度
+    MILVUS_MAX_TITLE = 512  # title 字段最大长度
 
     COLLECTION_NAME = "financial_reports"
 
@@ -200,6 +204,11 @@ class ReportIngestionService:
         """
         max_chunk = max_chunk or self.DEFAULT_MAX_CHUNK
         min_chunk = min_chunk or self.DEFAULT_MIN_CHUNK
+        
+        # 确保 max_chunk 不超过 Milvus 字段限制
+        if max_chunk > self.MILVUS_MAX_CHUNK_TEXT:
+            logger.warning(f"max_chunk ({max_chunk}) 超过 Milvus 限制 ({self.MILVUS_MAX_CHUNK_TEXT})，已自动调整为 {self.MILVUS_MAX_CHUNK_TEXT}")
+            max_chunk = self.MILVUS_MAX_CHUNK_TEXT
 
         markdown_file = Path(markdown_path)
         if not markdown_file.exists():
@@ -240,10 +249,21 @@ class ReportIngestionService:
 
             chunks_data = []
             for i, c in enumerate(normalized_chunks):
+                # 最终验证和截断：确保不超过 Milvus 字段限制
+                chunk_text = c["chunk_text"]
+                if len(chunk_text) > self.MILVUS_MAX_CHUNK_TEXT:
+                    logger.warning(f"Chunk {i} 文本长度 ({len(chunk_text)}) 超过限制，将被截断到 {self.MILVUS_MAX_CHUNK_TEXT}")
+                    chunk_text = chunk_text[:self.MILVUS_MAX_CHUNK_TEXT]
+                
+                title = c.get("title", "")
+                if len(title) > self.MILVUS_MAX_TITLE:
+                    logger.warning(f"Chunk {i} 标题长度 ({len(title)}) 超过限制，将被截断到 {self.MILVUS_MAX_TITLE}")
+                    title = title[:self.MILVUS_MAX_TITLE]
+                
                 chunks_data.append({
                     "chunk_id": self._generate_chunk_id(report_id, i),
-                    "chunk_text": c["chunk_text"],
-                    "title": c.get("title", ""),
+                    "chunk_text": chunk_text,
+                    "title": title,
                     "title_level": c.get("title_level", 0),
                     "report_id": report_id,
                     "company_name": company_name,
@@ -326,15 +346,35 @@ class ReportIngestionService:
                     if len(seg) < min_chunk:
                         # 合并策略：尽量合并到上一条；若无上一条则尝试合并到下一条（这里合并到上一条）
                         if normalized:
-                            normalized[-1]["chunk_text"] += "\n" + seg
+                            potential_length = len(normalized[-1]["chunk_text"]) + len("\n") + len(seg)
+                            # 同时检查不超过 max_chunk 和 Milvus 限制
+                            if potential_length <= max_chunk and potential_length <= self.MILVUS_MAX_CHUNK_TEXT:
+                                normalized[-1]["chunk_text"] += "\n" + seg
+                            else:
+                                # 无法合并，创建新条（但需要确保不超过限制）
+                                if len(seg) > self.MILVUS_MAX_CHUNK_TEXT:
+                                    logger.warning(f"片段过长 ({len(seg)})，将被截断到 {self.MILVUS_MAX_CHUNK_TEXT}")
+                                    seg = seg[:self.MILVUS_MAX_CHUNK_TEXT]
+                                normalized.append({
+                                    "chunk_text": seg,
+                                    "title": current_title,
+                                    "title_level": current_title_level
+                                })
                         else:
                             # 没有上一条，创建新条
+                            if len(seg) > self.MILVUS_MAX_CHUNK_TEXT:
+                                logger.warning(f"片段过长 ({len(seg)})，将被截断到 {self.MILVUS_MAX_CHUNK_TEXT}")
+                                seg = seg[:self.MILVUS_MAX_CHUNK_TEXT]
                             normalized.append({
                                 "chunk_text": seg,
                                 "title": current_title,
                                 "title_level": current_title_level
                             })
                     else:
+                        # 确保不超过 Milvus 限制
+                        if len(seg) > self.MILVUS_MAX_CHUNK_TEXT:
+                            logger.warning(f"片段过长 ({len(seg)})，将被截断到 {self.MILVUS_MAX_CHUNK_TEXT}")
+                            seg = seg[:self.MILVUS_MAX_CHUNK_TEXT]
                         normalized.append({
                             "chunk_text": seg,
                             "title": current_title,
@@ -348,8 +388,21 @@ class ReportIngestionService:
                 merged.append(item)
                 continue
             if len(item["chunk_text"]) < min_chunk:
-                merged[-1]["chunk_text"] += "\n" + item["chunk_text"]
+                potential_length = len(merged[-1]["chunk_text"]) + len("\n") + len(item["chunk_text"])
+                # 检查合并后是否超过限制
+                if potential_length <= self.MILVUS_MAX_CHUNK_TEXT:
+                    merged[-1]["chunk_text"] += "\n" + item["chunk_text"]
+                else:
+                    # 无法合并，单独添加（但需要确保不超过限制）
+                    if len(item["chunk_text"]) > self.MILVUS_MAX_CHUNK_TEXT:
+                        logger.warning(f"片段过长 ({len(item['chunk_text'])})，将被截断到 {self.MILVUS_MAX_CHUNK_TEXT}")
+                        item["chunk_text"] = item["chunk_text"][:self.MILVUS_MAX_CHUNK_TEXT]
+                    merged.append(item)
             else:
+                # 确保不超过 Milvus 限制
+                if len(item["chunk_text"]) > self.MILVUS_MAX_CHUNK_TEXT:
+                    logger.warning(f"片段过长 ({len(item['chunk_text'])})，将被截断到 {self.MILVUS_MAX_CHUNK_TEXT}")
+                    item["chunk_text"] = item["chunk_text"][:self.MILVUS_MAX_CHUNK_TEXT]
                 merged.append(item)
 
         return merged
@@ -420,3 +473,4 @@ class ReportIngestionService:
         raw_id = f"{report_id}_{chunk_index}_{int(time.time())}"
         return hashlib.md5(raw_id.encode()).hexdigest()
 
+ingestion_service = ReportIngestionService()
