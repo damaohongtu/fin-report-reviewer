@@ -119,7 +119,17 @@ chunk_prompt = """
 """
 
 def test_query_by_content(company_code: str, report_period: str, query: str):
-    report_id = f"{company_code}_{report_period}"
+    # 1. 连接Milvus
+    print("连接Milvus...")
+    connections.connect(
+        host=settings.MILVUS_HOST,
+        port=settings.MILVUS_PORT,
+        user=settings.MILVUS_USER,
+        password=settings.MILVUS_PASSWORD
+    )
+    print("✅ 已连接")
+    
+    # 2. 获取collection
     collection = Collection("financial_reports")
     collection.load()
 
@@ -127,11 +137,12 @@ def test_query_by_content(company_code: str, report_period: str, query: str):
 
     query_vector = embedding_service.encode([query])[0]
     search_results = collection.search(
+        expr=f"company_code == '{company_code}' and report_period == '{report_period}'",
         data=[query_vector],
         anns_field="embedding",
         param={"metric_type": "COSINE", "params": {"ef": 64}},
         limit=10,
-        output_fields=["chunk_text"]
+        output_fields=["chunk_text", "title", "chunk_type"]
     )
 
     chunk_texts = []
