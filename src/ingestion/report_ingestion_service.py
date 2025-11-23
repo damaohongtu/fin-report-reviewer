@@ -62,7 +62,7 @@ class ReportRepository:
             self.FieldSchema(name="chunk_id", dtype=self.DataType.VARCHAR, is_primary=True, max_length=128),
             self.FieldSchema(name="embedding", dtype=self.DataType.FLOAT_VECTOR, dim=self.embedding_dim),
             self.FieldSchema(name="title_embedding", dtype=self.DataType.FLOAT_VECTOR, dim=self.embedding_dim),
-            self.FieldSchema(name="chunk_text", dtype=self.DataType.VARCHAR, max_length=4096),
+            self.FieldSchema(name="chunk_text", dtype=self.DataType.VARCHAR, max_length=8192),
             self.FieldSchema(name="title", dtype=self.DataType.VARCHAR, max_length=512),
             self.FieldSchema(name="title_level", dtype=self.DataType.INT64),
             self.FieldSchema(name="report_id", dtype=self.DataType.VARCHAR, max_length=64),
@@ -219,7 +219,7 @@ class ReportIngestionService:
             logger.info("正在生成 title_embeddings ...")
             title_embeddings = self._generate_embeddings(title_inputs)
             logger.info("正在生成 content_embeddings ...")
-            content_embeddings = self._generate_embeddings(content_inputs)
+            content_embeddings = self._generate_embeddings([input[:1024] for input in content_inputs])
 
             # 5. 构造数据并写入 Milvus
             report_id = f"{company_code}_{report_period}"

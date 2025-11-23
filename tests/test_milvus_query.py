@@ -3,6 +3,8 @@ from pymilvus import connections, Collection
 from src.config.settings import settings
 from sentence_transformers import SentenceTransformer
 from src.embeddings.factory import EmbeddingFactory
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
 
 # 全局 LLM 实例（避免重复初始化）
 _llm = None
@@ -76,7 +78,7 @@ def test_query():
         anns_field="embedding",
         param={"metric_type": "COSINE", "params": {"ef": 64}},
         limit=5,
-        output_fields=["report_id", "company_name", "chunk_type", "chunk_text"]
+        output_fields=["report_id", "company_name", "chunk_type", "title", "chunk_text"]
     )
     
     print(f"\n找到 {len(search_results[0])} 条相关结果:")
@@ -140,7 +142,7 @@ def test_query_by_content(company_code: str, report_period: str, query: str):
     # 使用LLM对结果进行总结
     prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
-            ("human", human_prompt)
+            ("human", chunk_prompt)
         ])
         
     llm = get_llm()
@@ -154,5 +156,4 @@ def test_query_by_content(company_code: str, report_period: str, query: str):
     print(response.content)
 
 if __name__ == "__main__":
-    test_query()
-
+    test_query_by_content("002415.SZ", "20250630", "公司主营业务")
