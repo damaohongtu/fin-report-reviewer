@@ -186,7 +186,7 @@ async def generate_embeddings(request: EmbeddingRequest):
         embeddings = embedding_model.encode(
             request.texts,
             batch_size=request.batch_size or DEFAULT_BATCH_SIZE,
-            show_progress_bar=False,
+            show_progress_bar=True,
             convert_to_numpy=True
         )
         
