@@ -10,6 +10,17 @@ from src.embeddings.factory import EmbeddingFactory
 from src.config.settings import settings
 from src.ingestion.markdown_chunker import MarkdownChunker
 
+def truncate_by_bytes(text: str, max_bytes: int) -> str:
+    """按字节截断字符串"""
+    if not text:
+        return text
+    text_bytes = text.encode('utf-8')
+    if len(text_bytes) <= max_bytes:
+        return text
+    truncated = text_bytes[:max_bytes]
+    while truncated and truncated[-1] & 0x80 and not (truncated[-1] & 0x40):
+        truncated = truncated[:-1]
+    return truncated.decode('utf-8', errors='ignore')
 
 class ReportRepository:
     """
@@ -102,8 +113,8 @@ class ReportRepository:
                 [c["chunk_id"] for c in chunks],
                 embeddings,
                 title_embeddings,
-                [c["chunk_text"] for c in chunks],
-                [c.get("title", "") for c in chunks],
+                [truncate_by_bytes(c["chunk_text"], 8192) for c in chunks],
+                [truncate_by_bytes(c.get("title", ""), 512) for c in chunks],
                 [c.get("title_level", 0) for c in chunks],
                 [c["report_id"] for c in chunks],
                 [c["company_name"] for c in chunks],
@@ -227,8 +238,8 @@ class ReportIngestionService:
 
             chunks_data = []
             for i, c in enumerate(normalized_chunks):
-                chunk_text = c["chunk_text"]
-                title = c.get("title", "")
+                chunk_text = truncate_by_bytes(c["chunk_text"], 8192)
+                title = truncate_by_bytes(c.get("title", ""), 512)
                 
                 chunks_data.append({
                     "chunk_id": f"ck_{i}",
