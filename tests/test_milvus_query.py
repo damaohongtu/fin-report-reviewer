@@ -148,7 +148,6 @@ def test_query_by_content(company_code: str, report_period: str, query: str):
     chunk_texts = []
     for result in search_results[0]:
         chunk_texts.append(result.entity.get('chunk_text'))
-        print(result.entity.get('chunk_text'))
     
     # 使用LLM对结果进行总结
     prompt = ChatPromptTemplate.from_messages([
@@ -167,4 +166,32 @@ def test_query_by_content(company_code: str, report_period: str, query: str):
     print(response.content)
 
 if __name__ == "__main__":
-    test_query_by_content("002415.SZ", "20250630", "公司主营业务")
+
+    company_code = "002415.SZ"
+    report_period = "20250630"
+
+    print("=" * 40)
+    print(f"{company_code} {report_period}财报点评")
+    print("=" * 40)
+
+    print("-"*20 + "公司主营业务" + "-"*20)
+    test_query_by_content(company_code, report_period, "公司主营业务")
+    print("-"*20 + "公司财务状况" + "-"*20)
+    test_query_by_content(company_code, report_period, "公司财务状况")
+    print("-"*20 + "公司风险点" + "-"*20)
+    test_query_by_content(company_code, report_period, "公司风险点")
+    print("-"*20 + "公司业务亮点" + "-"*20)
+    test_query_by_content(company_code, report_period, "公司业务亮点")
+    print("-"*20 + "公司业务结构" + "-"*20)
+    test_query_by_content(company_code, report_period, "公司业务结构")
+    print("-"*20 + "公司业务发展" + "-"*20)
+    test_query_by_content(company_code, report_period, "公司业务发展")
+    print("-"*20 + "公司业务前景" + "-"*20)
+    test_query_by_content(company_code, report_period, "公司业务前景")
+    print("-"*20 + "公司业务风险" + "-"*20)
+    test_query_by_content(company_code, report_period, "公司业务风险")
+    print("-"*20 + "公司业务机会" + "-"*20)
+    test_query_by_content(company_code, report_period, "公司业务机会")
+    print("-"*20 + "公司业务挑战" + "-"*20)
+    test_query_by_content(company_code, report_period, "公司业务挑战")
+
