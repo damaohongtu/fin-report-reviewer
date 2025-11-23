@@ -66,7 +66,7 @@ class ReportRepository:
             self.FieldSchema(name="chunk_id", dtype=self.DataType.VARCHAR, is_primary=True, max_length=128),
             self.FieldSchema(name="embedding", dtype=self.DataType.FLOAT_VECTOR, dim=self.embedding_dim),
             self.FieldSchema(name="title_embedding", dtype=self.DataType.FLOAT_VECTOR, dim=self.embedding_dim),
-            self.FieldSchema(name="chunk_text", dtype=self.DataType.VARCHAR, max_length=4096),
+            self.FieldSchema(name="chunk_text", dtype=self.DataType.VARCHAR, max_length=1024),
             self.FieldSchema(name="title", dtype=self.DataType.VARCHAR, max_length=512),
             self.FieldSchema(name="title_level", dtype=self.DataType.INT64),
             self.FieldSchema(name="report_id", dtype=self.DataType.VARCHAR, max_length=64),
@@ -145,11 +145,11 @@ class ReportIngestionService:
     """
 
     # chunk 长度阈值
-    DEFAULT_MAX_CHUNK = 2048
-    DEFAULT_MIN_CHUNK = 512
+    DEFAULT_MAX_CHUNK = 600
+    DEFAULT_MIN_CHUNK = 300
     
     # Milvus 字段最大长度限制
-    MILVUS_MAX_CHUNK_TEXT = 4096  # chunk_text 字段最大长度
+    MILVUS_MAX_CHUNK_TEXT = 1024  # chunk_text 字段最大长度
     MILVUS_MAX_TITLE = 512  # title 字段最大长度
 
     COLLECTION_NAME = "financial_reports"
