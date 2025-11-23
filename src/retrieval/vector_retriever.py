@@ -2,9 +2,9 @@
 from typing import List, Dict, Optional
 from loguru import logger
 from pymilvus import connections, Collection
-from sentence_transformers import SentenceTransformer
 
 from src.config.settings import settings
+from src.embeddings.factory import EmbeddingFactory
 
 
 class VectorRetriever:
@@ -19,7 +19,7 @@ class VectorRetriever:
     def __init__(self):
         """初始化检索器"""
         self._connect_milvus()
-        self._init_embedding_model()
+        self._init_embedding_service()
         logger.info("向量检索器初始化完成")
     
     def _connect_milvus(self):
@@ -39,22 +39,19 @@ class VectorRetriever:
             logger.error(f"❌ Milvus连接失败: {e}")
             raise
     
-    def _init_embedding_model(self):
-        """初始化Embedding模型"""
+    def _init_embedding_service(self):
+        """初始化Embedding服务"""
         try:
-            self.embedding_model = SentenceTransformer(
-                settings.EMBEDDING_MODEL,
-                device='cpu'  # 检索时使用CPU即可
-            )
-            logger.success(f"✅ Embedding模型加载完成")
+            self.embedding_service = EmbeddingFactory.create_embedding_service()
+            logger.success(f"✅ Embedding服务初始化完成: {self.embedding_service.get_model_name()}")
         except Exception as e:
-            logger.error(f"❌ Embedding模型加载失败: {e}")
+            logger.error(f"❌ Embedding服务初始化失败: {e}")
             raise
     
     def _generate_embedding(self, text: str) -> List[float]:
         """生成文本embedding"""
-        embedding = self.embedding_model.encode([text])[0]
-        return embedding.tolist()
+        embeddings = self.embedding_service.encode(text)
+        return embeddings[0]
     
     def retrieve_by_company(
         self,

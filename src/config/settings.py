@@ -21,16 +21,25 @@ class Settings(BaseSettings):
     DEEPSEEK_TEMPERATURE: float = Field(default=0.1, env="DEEPSEEK_TEMPERATURE")
     DEEPSEEK_MAX_TOKENS: int = Field(default=4000, env="DEEPSEEK_MAX_TOKENS")
     
-    # Embedding 配置 - 本地模型
+    # Embedding 配置
+    EMBEDDING_SERVICE_TYPE: str = Field(default="local", env="EMBEDDING_SERVICE_TYPE")  # local 或 http
     EMBEDDING_MODEL: str = Field(default="BAAI/bge-large-zh-v1.5", env="EMBEDDING_MODEL")  # 模型名或本地路径
     EMBEDDING_DIM: int = Field(default=1024, env="EMBEDDING_DIM")  # bge-large-zh-v1.5维度
-    EMBEDDING_DEVICE: str = Field(default="cuda", env="EMBEDDING_DEVICE")  # cuda 或 cpu
+    EMBEDDING_DEVICE: str = Field(default="cuda", env="EMBEDDING_DEVICE")  # cuda 或 cpu (仅local模式)
     EMBEDDING_BATCH_SIZE: int = Field(default=32, env="EMBEDDING_BATCH_SIZE")  # 批量处理大小
-    EMBEDDING_CACHE_DIR: Optional[str] = Field(default=None, env="EMBEDDING_CACHE_DIR")  # 模型缓存目录
+    EMBEDDING_CACHE_DIR: Optional[str] = Field(default=None, env="EMBEDDING_CACHE_DIR")  # 模型缓存目录 (仅local模式)
     
-    # 数据库配置
-    DATABASE_URL: str = Field(..., env="DATABASE_URL")
+    # HTTP Embedding服务配置 (仅http模式)
+    EMBEDDING_API_URL: str = Field(default="http://localhost:8080", env="EMBEDDING_API_URL")  # HTTP服务地址
+    EMBEDDING_API_TIMEOUT: int = Field(default=1800, env="EMBEDDING_API_TIMEOUT")  # 请求超时时间(秒)
+    
+    # 数据库配置（已弃用，改用HTTP服务）
+    DATABASE_URL: str = Field(default="", env="DATABASE_URL")  # 不再必需
     DATABASE_ECHO: bool = Field(default=False, env="DATABASE_ECHO")
+    
+    # 财报数据服务配置 (HTTP)
+    FINANCIAL_DATA_API_URL: str = Field(default="http://localhost:8081", env="FINANCIAL_DATA_API_URL")
+    FINANCIAL_DATA_API_TIMEOUT: int = Field(default=30, env="FINANCIAL_DATA_API_TIMEOUT")
     
     # 向量数据库配置 - Milvus
     MILVUS_HOST: str = Field(default="localhost", env="MILVUS_HOST")
