@@ -72,7 +72,6 @@ class ReportRepository:
         fields = [
             self.FieldSchema(name="chunk_id", dtype=self.DataType.VARCHAR, is_primary=True, max_length=128),
             self.FieldSchema(name="embedding", dtype=self.DataType.FLOAT_VECTOR, dim=self.embedding_dim),
-            self.FieldSchema(name="title_embedding", dtype=self.DataType.FLOAT_VECTOR, dim=self.embedding_dim),
             self.FieldSchema(name="chunk_text", dtype=self.DataType.VARCHAR, max_length=8192),
             self.FieldSchema(name="title", dtype=self.DataType.VARCHAR, max_length=512),
             self.FieldSchema(name="title_level", dtype=self.DataType.INT64),
@@ -97,13 +96,12 @@ class ReportRepository:
             "params": {"M": 16, "efConstruction": 256}
         }
         col.create_index(field_name="embedding", index_params=index_params)
-        col.create_index(field_name="title_embedding", index_params=index_params)
         col.load()
         logger.success(f"✅ Collection创建完成: {self.collection_name}")
 
         return col
 
-    def insert_chunks(self, chunks: List[Dict], embeddings: List[List[float]], title_embeddings: List[List[float]]):
+    def insert_chunks(self, chunks: List[Dict], embeddings: List[List[float]]):
         """
         插入数据。
         entities 顺序必须与创建 schema 字段顺序一致。
@@ -112,7 +110,6 @@ class ReportRepository:
             entities = [
                 [c["chunk_id"] for c in chunks],
                 embeddings,
-                title_embeddings,
                 [truncate_by_bytes(c["chunk_text"], 8192) for c in chunks],
                 [truncate_by_bytes(c.get("title", ""), 512) for c in chunks],
                 [c.get("title_level", 0) for c in chunks],
@@ -129,7 +126,7 @@ class ReportRepository:
 
             self.collection.insert(entities)
             self.collection.flush()
-            logger.info(f"✅ 已存储{len(chunks)}条记录到Milvus (含 title_embedding)")
+            logger.info(f"✅ 已存储{len(chunks)}条记录到Milvus")
         except Exception as e:
             logger.error(f"❌ 存储到Milvus失败: {e}")
             raise
@@ -226,9 +223,9 @@ class ReportIngestionService:
             title_inputs = [c.get("title", "") or "" for c in normalized_chunks]
             content_inputs = [c.get("chunk_text", "") or "" for c in normalized_chunks]
             
-            # 4. 生成 embeddings（两套）
-            logger.info("正在生成 title_embeddings ...")
-            title_embeddings = self._generate_embeddings(title_inputs)
+            # 4. 生成 embeddings
+            # logger.info("正在生成 title_embeddings ...")
+            # title_embeddings = self._generate_embeddings(title_inputs)
             logger.info("正在生成 content_embeddings ...")
             content_embeddings = self._generate_embeddings([input[:1024] for input in content_inputs])
 
@@ -258,7 +255,7 @@ class ReportIngestionService:
                 })
 
             # insert
-            self.repo.insert_chunks(chunks_data, content_embeddings, title_embeddings)
+            self.repo.insert_chunks(chunks_data, content_embeddings)
 
             logger.success(f"✅ Markdown 摄入成功: {report_id}, chunks={len(chunks_data)}")
             return {
