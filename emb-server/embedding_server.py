@@ -33,7 +33,7 @@ import torch
 from loguru import logger
 
 # ==================== 配置 ====================
-DEFAULT_MODEL = "E:/models/bge-large-zh-v1.5"
+DEFAULT_MODEL = "/root/workspace/bge-large-zh-v1.5"
 DEFAULT_DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 DEFAULT_BATCH_SIZE = 32
 DEFAULT_CACHE_DIR = None  # 默认使用系统缓存目录
