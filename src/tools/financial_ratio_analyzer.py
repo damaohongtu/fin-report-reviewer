@@ -3,6 +3,7 @@
 计算13种核心财务比率，输入为利润表、资产负债表、现金流量表。
 支持季报和年报的计算，季报数据将进行年化处理。
 无法计算的指标值返回 None 并记录原因。
+参考新浪财经数据对计算结果进行检查：https://money.finance.sina.com.cn/corp/go.php/vFD_FinancialGuideLine/stockid/601138/displaytype/4.phtml
 """
 import math
 from typing import Dict, Any, Optional
