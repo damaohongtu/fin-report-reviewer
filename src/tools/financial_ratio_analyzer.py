@@ -4,6 +4,7 @@
 支持季报和年报的计算，季报数据将进行年化处理。
 无法计算的指标值返回 None 并记录原因。
 """
+import math
 from typing import Dict, Any, Optional
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
@@ -15,16 +16,19 @@ from loguru import logger
 # ==================== 工具函数 ====================
 
 def _safe_float(value: Any) -> Optional[float]:
-    """安全转换为 float，转换失败返回 None"""
+    """安全转换为 float，转换失败或 NaN 均返回 None"""
     if value is None:
         return None
     try:
         if isinstance(value, (int, float, Decimal)):
             f = float(value)
-            return None if (f != f) else f  # NaN check
+            return None if math.isnan(f) else f
         if isinstance(value, str):
             cleaned = value.replace(",", "").replace(" ", "")
-            return float(cleaned) if cleaned else None
+            if not cleaned:
+                return None
+            f = float(cleaned)
+            return None if math.isnan(f) else f
     except (ValueError, InvalidOperation):
         return None
     return None
@@ -36,8 +40,10 @@ def _safe_divide(
     scale: float = 1.0,
     decimal_places: int = 4,
 ) -> Optional[float]:
-    """安全除法，分母为 0 或任意操作数为 None 时返回 None"""
-    if numerator is None or denominator is None or denominator == 0:
+    """安全除法，分母为 0、任意操作数为 None 或 NaN 时返回 None"""
+    if numerator is None or denominator is None:
+        return None
+    if math.isnan(numerator) or math.isnan(denominator) or denominator == 0:
         return None
     return round((numerator / denominator) * scale, decimal_places)
 
@@ -302,7 +308,8 @@ class _RatioCalculator:
                 "other_equity_instruments_invest",# a001228000 其他权益工具投资
                 "other_noncurrent_financial_assets",  # a001229000 其他非流动金融资产
             ]
-            invest_total = sum(_g(d, k) or 0.0 for k in investment_keys)
+            # None（缺失字段）按 0 处理，NaN 已由 _g/_safe_float 转为 None
+            invest_total = sum(v for k in investment_keys if (v := _g(d, k)) is not None)
             return total_assets - invest_total
 
         op_assets_curr = _investment_assets(self.balance)
@@ -372,11 +379,13 @@ class _RatioCalculator:
             "lease_liabilities",                 # a002211000 租赁负债
         ]
         available_values = {k: self._b(k) for k in financial_liability_keys}
-        has_any = any(v is not None for v in available_values.values())
+        # 只累加有效值（None 和 NaN 视为缺失，按 0 处理但需至少一个有效值）
+        valid_values = [v for v in available_values.values() if v is not None]
+        has_any = bool(valid_values)
 
         fin_liabilities: Optional[float] = None
         if has_any:
-            fin_liabilities = sum(v or 0.0 for v in available_values.values())
+            fin_liabilities = sum(valid_values)
 
         value = _safe_divide(fin_liabilities, total_assets, scale=100, decimal_places=2)
         return {
@@ -692,7 +701,8 @@ def _print_ratios(ratios: Dict[str, Any], stock_code: str, report_period: str) -
                         "lease_liabilities":              "租赁负债",
                     }
                     comps = r.get("components", {})
-                    shown = {k: v for k, v in comps.items() if v}
+                    # 只显示有效值（过滤 None；NaN 已由 _safe_float 转为 None）
+                    shown = {k: v for k, v in comps.items() if v is not None}
                     if shown:
                         parts = "  ".join(
                             f"{_FIN_LIB_LABELS.get(k, k)}: {_fmt_amount(v)}"
