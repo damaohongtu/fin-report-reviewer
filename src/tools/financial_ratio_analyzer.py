@@ -604,7 +604,7 @@ def calculate_financial_ratios_tool(
 
 def _fmt_value(value: Optional[float], unit: str) -> str:
     """格式化比率值用于打印"""
-    if value is None:
+    if value is None or value != value:  # None 或 NaN
         return "N/A"
     if unit == "%":
         return f"{value:.2f}%"
@@ -617,7 +617,7 @@ def _fmt_value(value: Optional[float], unit: str) -> str:
 
 def _fmt_amount(value: Optional[float]) -> str:
     """格式化金额（亿元）"""
-    if value is None:
+    if value is None or value != value:  # None 或 NaN
         return "N/A"
     sign = "-" if value < 0 else ""
     abs_v = abs(value)
@@ -683,11 +683,19 @@ def _print_ratios(ratios: Dict[str, Any], stock_code: str, report_period: str) -
                     print(f"       ├ 经营现金流: {_fmt_amount(r.get('net_operating_cash_flow'))}"
                           f"  | 核心利润: {_fmt_amount(r.get('core_profit'))}")
                 elif key == "financial_liability_ratio":
+                    _FIN_LIB_LABELS = {
+                        "short_term_borrowing":           "短期借款",
+                        "trading_financial_liabilities":  "交易性金融负债",
+                        "current_noncurrent_liabilities": "一年内到期非流动负债",
+                        "long_term_borrowing":            "长期借款",
+                        "bonds_payable":                  "应付债券",
+                        "lease_liabilities":              "租赁负债",
+                    }
                     comps = r.get("components", {})
                     shown = {k: v for k, v in comps.items() if v}
                     if shown:
                         parts = "  ".join(
-                            f"{k.replace('_', ' ')}: {_fmt_amount(v)}"
+                            f"{_FIN_LIB_LABELS.get(k, k)}: {_fmt_amount(v)}"
                             for k, v in shown.items()
                         )
                         print(f"       ├ {parts}")
