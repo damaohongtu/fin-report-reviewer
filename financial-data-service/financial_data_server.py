@@ -5,10 +5,9 @@
 使用FastAPI实现
 
 启动方式：
-python financial-data-service/financial_data_server.py --host 0.0.0.0 --port 8081
-
+python financial-data-service/financial_data_server.py --host 0.0.0.0 --port 8081 --database-url postgresql://postgres:postgres@localhost:5432/financial_reports
 或使用uvicorn：
-uvicorn financial_data_server:app --host 0.0.0.0 --port 8081
+uvicorn financial_data_server:app --host 0.0.0.0 --port 8081 --database-url postgresql://postgres:postgres@localhost:5432/financial_reports
 
 参数说明：
 --host: 服务host (默认: 0.0.0.0)
@@ -42,32 +41,32 @@ class HealthResponse(BaseModel):
 
 class IncomeStatementRequest(BaseModel):
     """利润表查询请求"""
-    stock_code: str = Field(..., description="股票代码", example="000001")
-    report_period: str = Field(..., description="报告期", example="2024-03-31")
+    stock_code: str = Field(..., description="股票代码", json_schema_extra={"example": "000001"})
+    report_period: str = Field(..., description="报告期", json_schema_extra={"example": "2024-03-31"})
     report_type: str = Field(default="A", description="报表类型 A=合并报表 B=母公司报表")
 
 class BalanceSheetRequest(BaseModel):
     """资产负债表查询请求"""
-    stock_code: str = Field(..., description="股票代码", example="000001")
-    report_period: str = Field(..., description="报告期", example="2024-03-31")
+    stock_code: str = Field(..., description="股票代码", json_schema_extra={"example": "000001"})
+    report_period: str = Field(..., description="报告期", json_schema_extra={"example": "2024-03-31"})
     report_type: str = Field(default="A", description="报表类型 A=合并报表 B=母公司报表")
 
 class CashFlowRequest(BaseModel):
     """现金流量表查询请求"""
-    stock_code: str = Field(..., description="股票代码", example="000001")
-    report_period: str = Field(..., description="报告期", example="2024-03-31")
+    stock_code: str = Field(..., description="股票代码", json_schema_extra={"example": "000001"})
+    report_period: str = Field(..., description="报告期", json_schema_extra={"example": "2024-03-31"})
     report_type: str = Field(default="A", description="报表类型 A=合并报表 B=母公司报表")
 
 class HistoricalPeriodsRequest(BaseModel):
     """历史期查询请求"""
-    stock_code: str = Field(..., description="股票代码", example="000001")
-    current_period: str = Field(..., description="当前报告期", example="2024-03-31")
+    stock_code: str = Field(..., description="股票代码", json_schema_extra={"example": "000001"})
+    current_period: str = Field(..., description="当前报告期", json_schema_extra={"example": "2024-03-31"})
     count: int = Field(default=4, description="获取历史期数", ge=1, le=20)
 
 class CompleteDataRequest(BaseModel):
     """完整财务数据查询请求"""
-    stock_code: str = Field(..., description="股票代码", example="000001")
-    report_period: str = Field(..., description="报告期", example="2024-03-31")
+    stock_code: str = Field(..., description="股票代码", json_schema_extra={"example": "000001"})
+    report_period: str = Field(..., description="报告期", json_schema_extra={"example": "2024-03-31"})
     report_type: str = Field(default="A", description="报表类型")
     include_previous: bool = Field(default=True, description="是否包含上期数据")
 
@@ -107,13 +106,19 @@ def init_database(db_url: str):
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     logger.info("🚀 财报数据服务启动中...")
-    
-    # Startup: 检查数据库连接
+
+    # uvicorn 以字符串模块路径启动时会重新导入本模块，
+    # db_engine 全局变量在新模块实例中为 None。
+    # 通过环境变量传递数据库 URL，在 lifespan 中完成初始化。
     if db_engine is None:
-        logger.warning("⚠️ 数据库未初始化，某些功能可能不可用")
-    
+        db_url = os.environ.get("FIN_DATA_DB_URL", "")
+        if db_url:
+            init_database(db_url)
+        else:
+            logger.warning("⚠️ 数据库未初始化，请通过 --database-url 参数指定连接地址")
+
     yield
-    
+
     # Shutdown: 关闭数据库连接
     if db_engine:
         db_engine.dispose()
@@ -467,17 +472,16 @@ def main():
     parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="服务端口")
     parser.add_argument("--database-url", type=str, required=True, help="数据库连接URL")
     parser.add_argument("--reload", action="store_true", help="开启热重载（开发模式）")
-    
+
     args = parser.parse_args()
-    
-    # 初始化数据库
-    init_database(args.database_url)
-    
-    # 启动服务
+
+    # 将数据库 URL 写入环境变量，供 lifespan 在 uvicorn 子进程中读取
+    os.environ["FIN_DATA_DB_URL"] = args.database_url
+
     import uvicorn
-    
+
     logger.info(f"🚀 启动财报数据服务: {args.host}:{args.port}")
-    
+
     uvicorn.run(
         "financial_data_server:app",
         host=args.host,
