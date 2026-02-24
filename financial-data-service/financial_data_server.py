@@ -184,6 +184,7 @@ async def get_income_statement(request: IncomeStatementRequest) -> Dict[str, Any
                 b001210000 as admin_expense,
                 b001216000 as rd_expense,
                 b001211000 as finance_expense,
+                b001211101 as interest_expense,
                 b001300000 as operating_profit,
                 b001000000 as total_profit,
                 b002000000 as net_profit,
@@ -236,7 +237,21 @@ async def get_balance_sheet(request: BalanceSheetRequest) -> Dict[str, Any]:
                 a003000000 as total_equity,
                 a003100000 as parent_equity,
                 a001123000 as inventory,
-                a002128000 as contract_liability
+                a002128000 as contract_liability,
+                a001212000 as fixed_assets,
+                a001107000 as trading_financial_assets,
+                a001202000 as available_for_sale_assets,
+                a001203000 as held_to_maturity_investments,
+                a001205000 as long_term_equity_investment,
+                a001226000 as debt_investments,
+                a001228000 as other_equity_instruments_invest,
+                a001229000 as other_noncurrent_financial_assets,
+                a002101000 as short_term_borrowing,
+                a002105000 as trading_financial_liabilities,
+                a002125000 as current_noncurrent_liabilities,
+                a002201000 as long_term_borrowing,
+                a002203000 as bonds_payable,
+                a002211000 as lease_liabilities
             FROM ashare.a_share_balance_sheet
             WHERE stkcd = :stock_code
                 AND accper = :report_period
